@@ -21,6 +21,13 @@ if not ACCESS_KEY or not SECRET_KEY:
 account_total_bytes = 0
 account_total_objects = 0
 
+def format_size(size_bytes):
+    size_gb = size_bytes / (1024 ** 3)
+    if size_gb < 0.1:
+        return f"{size_bytes / (1024 ** 2):.2f} MB"
+    return f"{size_gb:.2f} GB"
+
+
 def get_spaces_usage(region):
     global account_total_bytes, account_total_objects
 
@@ -67,13 +74,7 @@ if __name__ == "__main__":
                 account_total_bytes += total_size_bytes
                 account_total_objects += object_count
 
-                size_gb = total_size_bytes / (1024 ** 3)
-                if size_gb < 0.1:
-                    size_str = f"{total_size_bytes / (1024 ** 2):.2f} MB"
-                else:
-                    size_str = f"{size_gb:.2f} GB"
-
-                print(ROW_FMT.format(region, space_name, size_str, object_count))
+                print(ROW_FMT.format(region, space_name, format_size(total_size_bytes), object_count))
         except Exception as e:
             print(ROW_FMT.format(region, ("Error: " + str(e))[:30], "-", "-"))
 
@@ -82,13 +83,7 @@ if __name__ == "__main__":
     # Calculate account-wide metrics
     grand_total_gb = account_total_bytes / (1024 ** 3)
 
-    # Format the grand total display string
-    if grand_total_gb < 0.1:
-        grand_total_str = f"{account_total_bytes / (1024 ** 2):.2f} MB"
-    else:
-        grand_total_str = f"{grand_total_gb:.2f} GB"
-
-    print(TOTAL_FMT.format("ACCOUNT TOTAL", grand_total_str, account_total_objects))
+    print(TOTAL_FMT.format("ACCOUNT TOTAL", format_size(account_total_bytes), account_total_objects))
     print("|" + "-" * 75 + "|")
 
     # Summary
