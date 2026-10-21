@@ -6,6 +6,10 @@ BASE_LIMIT_GB = 250.0
 OVERAGE_COST_PER_GB = 0.02
 
 REGIONS = ["fra1", "ams3"]
+
+ROW_FMT = "| {:<10} | {:<30} | {:<12} | {:<12} |"
+TOTAL_FMT = "| {:<43} | {:<12} | {:<12} |"
+
 ACCESS_KEY = os.getenv("DO_SPACES_KEY")
 SECRET_KEY = os.getenv("DO_SPACES_SECRET")
 
@@ -50,7 +54,7 @@ def get_spaces_usage(region):
 
 
 if __name__ == "__main__":
-    print(f"\n| {"Region":<10} | {"Space Name":<30} | {"Total Size":<12} | {"Object Count":<12} |")
+    print("\n" + ROW_FMT.format("Region", "Space Name", "Total Size", "Object Count"))
     print("|" + "-" * 75 + "|")
 
     for region in REGIONS:
@@ -69,9 +73,9 @@ if __name__ == "__main__":
                 else:
                     size_str = f"{size_gb:.2f} GB"
 
-                print(f"| {region:<10} | {space_name:<30} | {size_str:<12} | {object_count:<12} |")
+                print(ROW_FMT.format(region, space_name, size_str, object_count))
         except Exception as e:
-            print(f"| {region:<10} | Error connecting to region: {str(e)[:45]:<30} | {"-":<12} | {"-":<12} |")
+            print(ROW_FMT.format(region, ("Error: " + str(e))[:30], "-", "-"))
 
     print("|" + "-" * 75 + "|")
 
@@ -84,11 +88,11 @@ if __name__ == "__main__":
     else:
         grand_total_str = f"{grand_total_gb:.2f} GB"
 
-    print(f"| {"ACCOUNT TOTAL":<43} | {grand_total_str:<12} | {account_total_objects:<12} |")
+    print(TOTAL_FMT.format("ACCOUNT TOTAL", grand_total_str, account_total_objects))
     print("|" + "-" * 75 + "|")
 
     # Summary
-    print(f"\nDigitalOcean Account Summary:")
+    print("\nDigitalOcean Account Summary:")
     print(f" -> Base Storage Limit: {BASE_LIMIT_GB} GB")
 
     remaining_gb = max(0.0, BASE_LIMIT_GB - grand_total_gb)
