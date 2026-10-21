@@ -10,7 +10,15 @@ if not ACCESS_KEY or not SECRET_KEY:
     print("Error: Missing credentials. Please run this script using the 1Password CLI ('op run').", file=sys.stderr)
     sys.exit(1)
 
+# Global trackers for account-wide metrics
+BASE_LIMIT_GB = 250.0
+OVERAGE_COST_PER_GB = 0.02
+account_total_bytes = 0
+account_total_objects = 0
+
 def get_spaces_usage(region):
+    global account_total_bytes, account_total_objects
+
     session = boto3.session.Session()
     client = session.client(
         's3',
@@ -36,6 +44,10 @@ def get_spaces_usage(region):
                         total_size_bytes += obj['Size']
                         object_count += 1
 
+            # Add to aggregate to account totals
+            account_total_bytes += total_size_bytes
+            account_total_objects += object_count
+
             size_gb = total_size_bytes / (1024 ** 3)
             if size_gb < 0.1:
                 size_str = f"{total_size_bytes / (1024 ** 2):.2f} MB"
@@ -54,3 +66,34 @@ if __name__ == "__main__":
 
     for region in REGIONS:
         get_spaces_usage(region)
+
+    print("|" + "-" * 75 + "|")
+
+    # Calculate account-wide metrics
+    grand_total_gb = account_total_bytes / (1024 ** 3)
+
+    # Format the grand total display string
+    if grand_total_gb < 0.1:
+        grand_total_str = f"{account_total_bytes / (1024 ** 2):.2f} MB"
+    else:
+        grand_total_str = f"{grand_total_gb:.2f} GB"
+
+    print(f"| {'ACCOUNT TOTAL':<43} | {grand_total_str:<12} | {account_total_objects:<12} |")
+    print("|" + "-" * 75 + "|")
+
+    # Summary
+    print(f"\nDigitalOcean Account Summary:")
+    print(f" -> Base Storage Limit: {BASE_LIMIT_GB} GB")
+
+    remaining_gb = max(0.0, BASE_LIMIT_GB - grand_total_gb)
+
+    if grand_total_gb > BASE_LIMIT_GB:
+        overage_gb = grand_total_gb - BASE_LIMIT_GB
+        estimated_overage_cost = overage_gb * OVERAGE_COST_PER_GB
+        print(f" -> STATUS: OVER LIMIT (Exceeded by {overage_gb:.2f} GB)")
+        print(f" -> Remaining Free Base Capacity: {remaining_gb:.2f} GB")  # Caps at 0.00 GB
+        print(f" -> Estimated Storage Overage Cost: ${estimated_overage_cost:.2f}/month (at $0.02/GB)")
+    else:
+        percent_used = (grand_total_gb / BASE_LIMIT_GB) * 100 if BASE_LIMIT_GB > 0 else 0
+        print(f" -> STATUS: WITHIN LIMIT ({percent_used:.1f}% of base allowance used)")
+        print(f" -> Remaining Free Base Capacity: {remaining_gb:.2f} GB")  # Shows actual space left
