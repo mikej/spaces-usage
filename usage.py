@@ -21,10 +21,18 @@ if not ACCESS_KEY or not SECRET_KEY:
 account_total_bytes = 0
 account_total_objects = 0
 
+def size_in_mb(size_bytes):
+    return size_bytes / (1024 ** 2)
+
+
+def size_in_gb(size_bytes):
+    return size_bytes / (1024 ** 3)
+
+
 def format_size(size_bytes):
-    size_gb = size_bytes / (1024 ** 3)
+    size_gb = size_in_gb(size_bytes)
     if size_gb < 0.1:
-        return f"{size_bytes / (1024 ** 2):.2f} MB"
+        return f"{size_in_mb(size_bytes):.2f} MB"
     return f"{size_gb:.2f} GB"
 
 
@@ -81,7 +89,7 @@ if __name__ == "__main__":
     print("|" + "-" * 75 + "|")
 
     # Calculate account-wide metrics
-    grand_total_gb = account_total_bytes / (1024 ** 3)
+    grand_total_gb = size_in_gb(account_total_bytes)
 
     print(TOTAL_FMT.format("ACCOUNT TOTAL", format_size(account_total_bytes), account_total_objects))
     print("|" + "-" * 75 + "|")
