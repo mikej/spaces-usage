@@ -2,6 +2,9 @@ import os
 import sys
 import boto3
 
+BASE_LIMIT_GB = 250.0
+OVERAGE_COST_PER_GB = 0.02
+
 REGIONS = ["fra1", "ams3"]
 ACCESS_KEY = os.getenv("DO_SPACES_KEY")
 SECRET_KEY = os.getenv("DO_SPACES_SECRET")
@@ -11,8 +14,6 @@ if not ACCESS_KEY or not SECRET_KEY:
     sys.exit(1)
 
 # Global trackers for account-wide metrics
-BASE_LIMIT_GB = 250.0
-OVERAGE_COST_PER_GB = 0.02
 account_total_bytes = 0
 account_total_objects = 0
 
@@ -21,27 +22,27 @@ def get_spaces_usage(region):
 
     session = boto3.session.Session()
     client = session.client(
-        's3',
+        "s3",
         region_name=region,
-        endpoint_url=f'https://{region}.digitaloceanspaces.com',
+        endpoint_url=f"https://{region}.digitaloceanspaces.com",
         aws_access_key_id=ACCESS_KEY,
         aws_secret_access_key=SECRET_KEY,
     )
 
     try:
         response = client.list_buckets()
-        spaces = response.get('Buckets', [])
+        spaces = response.get("Buckets", [])
 
         for space in spaces:
-            space_name = space['Name']
+            space_name = space["Name"]
             total_size_bytes = 0
             object_count = 0
 
-            paginator = client.get_paginator('list_objects_v2')
+            paginator = client.get_paginator("list_objects_v2")
             for page in paginator.paginate(Bucket=space_name):
-                if 'Contents' in page:
-                    for obj in page['Contents']:
-                        total_size_bytes += obj['Size']
+                if "Contents" in page:
+                    for obj in page["Contents"]:
+                        total_size_bytes += obj["Size"]
                         object_count += 1
 
             # Add to aggregate to account totals
@@ -57,11 +58,11 @@ def get_spaces_usage(region):
             print(f"| {region:<10} | {space_name:<30} | {size_str:<12} | {object_count:<12} |")
 
     except Exception as e:
-        print(f"| {region:<10} | Error connecting to region: {str(e)[:45]:<30} | {'-':<12} | {'-':<12} |")
+        print(f"| {region:<10} | Error connecting to region: {str(e)[:45]:<30} | {"-":<12} | {"-":<12} |")
 
 
 if __name__ == "__main__":
-    print(f"\n| {'Region':<10} | {'Space Name':<30} | {'Total Size':<12} | {'Object Count':<12} |")
+    print(f"\n| {"Region":<10} | {"Space Name":<30} | {"Total Size":<12} | {"Object Count":<12} |")
     print("|" + "-" * 75 + "|")
 
     for region in REGIONS:
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     else:
         grand_total_str = f"{grand_total_gb:.2f} GB"
 
-    print(f"| {'ACCOUNT TOTAL':<43} | {grand_total_str:<12} | {account_total_objects:<12} |")
+    print(f"| {"ACCOUNT TOTAL":<43} | {grand_total_str:<12} | {account_total_objects:<12} |")
     print("|" + "-" * 75 + "|")
 
     # Summary
