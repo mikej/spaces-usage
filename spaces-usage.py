@@ -5,7 +5,7 @@ import boto3
 BASE_LIMIT_GB = 250.0
 OVERAGE_COST_PER_GB = 0.02
 
-REGIONS = ["fra1", "ams3"]
+REGIONS = ["fra1", "ams3", "lon1"]
 
 ROW_FMT = "| {:<10} | {:<30} | {:<12} | {:<12} |"
 TOTAL_FMT = "| {:<43} | {:<12} | {:<12} |"
